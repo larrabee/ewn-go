@@ -1,11 +1,11 @@
 package ewn
 
 import (
-	"os"
 	"github.com/spf13/viper"
+	"os"
 )
 
-
+// GetConfig return config struct
 func GetConfig(configPath string) (*viper.Viper, error) {
 	var v = viper.New()
 	v.SetConfigType("json")
@@ -18,7 +18,8 @@ func GetConfig(configPath string) (*viper.Viper, error) {
 	return v, err2
 }
 
-func InitConfig(configPath string) (error) {
+// InitConfig create default config file in given path
+func InitConfig(configPath string) error {
 	config := `{
   "email": {
     "enabled": true,
