@@ -2,11 +2,10 @@ package main
 
 import (
 	"fmt"
-	"./ewn"
+	ewn "github.com/larrabee/ewn-go/ewn"
 	"syscall"
 	"os/signal"
 	"os"
-	"time"
 )
 
 
@@ -16,10 +15,20 @@ func main() {
 	lock := ewn.Lock{Key: cli.DontDuplicateKey}
 	msg := ewn.Message{Args: cli}
 	
+	if cli.InitConfig {
+		err := ewn.InitConfig(cli.Config)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Config initialization failed with error: ", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Default config file successfully created in %s file\nPlease update it with your values\n", cli.Config)
+		os.Exit(0)
+	}
+	
 	cfg, err1 := ewn.GetConfig(cli.Config)
 	if err1 != nil {
 		panic(err1)
-	}
+	}	
 	if len(cli.Recipients) != 0 {
 		cfg.Set("email.recipients", cli.Recipients)
 	}
@@ -41,15 +50,15 @@ func main() {
 		}
 	}
 	
-	for retryCounter := 1; retryCounter <= cli.Retry ; retryCounter++  {
+	RetryLoop: for retryCounter := 1; retryCounter <= cli.Retry ; retryCounter++  {
 		fmt.Println(retryCounter)
-		_ = ewn.Popen(cli.Command)
-		
-		//fmt.Printf("Out: %scode: %d\ndur: %s\n", output, exitCode, duration)
+		retry := ewn.Popen(cli.Command)
+		msg.Retries = append(msg.Retries, retry)
+		for _, v := range cli.ValidExitCode {
+   		if retry.ExitCode == v {
+				break RetryLoop
+			}
+		}
 	}
 	_ = ewn.Notify(msg)
-	//fmt.Println(args)
-	//fmt.Println(MessageHeader)
-	//fmt.Printf("%+v", cfg)
-	time.Sleep(1* time.Second)
 }

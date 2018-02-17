@@ -43,7 +43,7 @@ func (e *ErrLockNotOwned) Error() string {
 
 func (l *Lock) Acquire() (error) {
   if l.lockFilePath == "" {
-    lockFileName := "ewn-" + hash(l.Key) + ".lock"
+    lockFileName := "ewn-" + hashOfString(l.Key) + ".lock"
     l.lockFilePath = path.Join(os.TempDir(), lockFileName)
   }
   if _, err1 := os.Stat(l.lockFilePath); !os.IsNotExist(err1) {
@@ -51,7 +51,7 @@ func (l *Lock) Acquire() (error) {
     if err2 != nil {
       return err2
     }
-    if isProcessExist(pid) {
+    if isPidExist(pid) {
       return &ErrLockAlreadyAquired{fmt.Sprintf("Lock already acquired by process with pid: %d", pid)}
     }
     err3 := writeLockFile(l.lockFilePath)
@@ -79,14 +79,14 @@ func (l *Lock) Release() (error) {
   return nil
 }
 
-func hash (str string) (hash string) {
+func hashOfString (str string) (hash string) {
   hasher := sha1.New()
   hasher.Write([]byte(str))
   hash = hex.EncodeToString(hasher.Sum(nil))
   return
 }
 
-func isProcessExist(pid int64) (bool) {
+func isPidExist(pid int64) (bool) {
   file, err1 := os.Stat(fmt.Sprintf("/proc/%d", pid));
   if os.IsNotExist(err1){
     return false
