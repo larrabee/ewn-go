@@ -1,5 +1,5 @@
 # Execute With Notify
-[![Go Report Card](https://goreportcard.com/badge/github.com/larrabee/ewn-go)](https://goreportcard.com/report/github.com/larrabee/ewn-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/larrabee/ewn-go)](https://goreportcard.com/report/github.com/larrabee/ewn-go)  
 This is wrapper script, what can notify you when your tasks failed.
 
 ## Features
