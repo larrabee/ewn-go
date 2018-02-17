@@ -2,12 +2,11 @@ package ewn
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 )
 
 // Notify send notifications over all chanels
-func Notify(strs ...interface{}) error {
-	for _, str := range strs {
-		fmt.Println(str)
-	}
-	return nil
+func Notify(msg *Message, config *viper.Viper) () {
+	fmt.Printf("%+v", msg)
+	return
 }

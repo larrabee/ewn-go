@@ -20,7 +20,7 @@ type Args struct {
 }
 
 // GetCliArgs return cli args structure
-func GetCliArgs() (cli Args) {
+func GetCliArgs() (cli *Args) {
 	cli.ValidExitCode = []int{0}
 	cli.Retry = 1
 	cli.RetrySleep = 0
