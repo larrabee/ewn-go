@@ -21,6 +21,7 @@ type Lock struct {
 type ErrLockAquireFailed struct {
 	message string
 }
+
 // ErrLockAlreadyAquired : error, that returned then lock already acquired by another process
 type ErrLockAlreadyAquired struct {
 	message string
