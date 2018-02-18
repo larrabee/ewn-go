@@ -11,8 +11,12 @@ import (
 func main() {
 	cli := ewn.GetCliArgs()
 	lock := ewn.Lock{Key: cli.DontDuplicateKey}
-	msg := ewn.Message{Args: cli}
+	msg := ewn.Message{Args: cli, ValidExitCode: cli.ValidExitCode}
 
+	if (cli.InitConfig == false) && (cli.Command == "") {
+		fmt.Fprintln(os.Stderr, "error: --command is required")
+		os.Exit(1)
+	}
 	if cli.InitConfig {
 		err := ewn.InitConfig(cli.Config)
 		if err != nil {
@@ -43,15 +47,21 @@ func main() {
 		err2 := lock.Acquire()
 		if err2 != nil {
 			msg.GeneralError = err2
-			_ = ewn.Notify(msg)
+			ewn.Notify(&msg, cfg)
 			os.Exit(1)
 		}
+		defer lock.Release()
 	}
 
 RetryLoop:
 	for retryCounter := 1; retryCounter <= cli.Retry; retryCounter++ {
-		fmt.Println(retryCounter)
-		retry := ewn.Popen(cli.Command)
+		retry, err := ewn.Popen(cli.Command)
+		if err != nil {
+			msg.GeneralError = err
+			ewn.Notify(&msg, cfg)
+			os.Exit(1)
+		}
+		retry.Retry = retryCounter
 		msg.Retries = append(msg.Retries, retry)
 		for _, v := range cli.ValidExitCode {
 			if retry.ExitCode == v {
@@ -59,5 +69,5 @@ RetryLoop:
 			}
 		}
 	}
-	_ = ewn.Notify(msg)
+	ewn.Notify(&msg, cfg)
 }

@@ -6,7 +6,7 @@ import (
 
 // Args cli args structure
 type Args struct {
-	Command          string   `arg:"required, -c"`
+	Command          string   `arg:"-c"`
 	Recipients       []string `arg:"-r,separate"`
 	Comment          string   `help:"Comment for email Message"`
 	ValidExitCode    []int    `arg:"--valid-exitcodes, separate" help:"Valid exitcodes for executed command"`
@@ -20,7 +20,7 @@ type Args struct {
 }
 
 // GetCliArgs return cli args structure
-func GetCliArgs() (cli *Args) {
+func GetCliArgs() (cli Args) {
 	cli.ValidExitCode = []int{0}
 	cli.Retry = 1
 	cli.RetrySleep = 0

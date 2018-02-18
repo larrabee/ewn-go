@@ -2,6 +2,10 @@ package ewn
 
 import (
 	"bytes"
+	_ "fmt"
+	"github.com/mattn/go-isatty"
+	"io"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -19,26 +23,34 @@ type Retry struct {
 
 // Message is output message structure
 type Message struct {
-	Args         Args
-	Host         string
-	Retries      []Retry
-	GeneralError error
+	Args          Args
+	Host          string
+	Retries       []Retry
+	GeneralError  error
+	ValidExitCode []int
 }
 
 // Popen execute given command and return retry structure
-func Popen(command string) (result Retry) {
+func Popen(command string) (result Retry, err error) {
 	var outB bytes.Buffer
 	result.StartTime = time.Now().UTC()
 	cmd := exec.Command("/bin/bash", "-c", command)
-	cmd.Stdout = &outB
-	cmd.Stderr = &outB
-	err := cmd.Run()
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
+		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
+	} else {
+		cmd.Stdout = &outB
+		cmd.Stderr = &outB
+	}
+
+	err2 := cmd.Start()
+	_ = cmd.Wait()
 
 	result.Output = outB.String()
 	result.EndTime = time.Now().UTC()
 	result.Duration = result.EndTime.Sub(result.StartTime)
 
-	if err != nil {
+	if err2 != nil {
 		exitError := err.(*exec.ExitError)
 		ws := exitError.Sys().(syscall.WaitStatus)
 		result.ExitCode = ws.ExitStatus()
@@ -46,5 +58,5 @@ func Popen(command string) (result Retry) {
 		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
 		result.ExitCode = ws.ExitStatus()
 	}
-	return
+	return result, nil
 }

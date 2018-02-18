@@ -39,11 +39,6 @@ func InitConfig(configPath string) error {
     "port": 12206,
     "tag": "ewn",
     "mtu": 1400
-  },
-  "zabbix": {
-    "enabled": true,
-    "config": "/etc/zabbix/zabbix_agentd.conf",
-    "key": "linux.cron.status"
   }
 }
 	`
