@@ -133,7 +133,7 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 			} else {
 				gelfMessage.Extra["failed"] = 0
 			}
-			gelfMessage.Extra["output"] = stripOutput(retry.Output, 65535, "\n<Output truncated>")
+			gelfMessage.Extra["output"] = stripOutput(retry.Output, 20, "\n<Output truncated>")
 			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
 			if err != nil {
 				return err
@@ -155,10 +155,11 @@ func stripOutput(output string, maxLen int, text string) string {
 	}
 	var out string
 	outLen := maxLen - utf8.RuneCountInString(text)
-	for i, w, char := 0, 0, 0; i < len(text) || char < outLen; i, char = i+w, char+1 {
-		runeValue, width := utf8.DecodeRuneInString(output[i:])
+	for i, char := 0, 0; i < len(text) || char < outLen; char = char + 1 {
+		//var runeValue rune
+		runeValue, size := utf8.DecodeRuneInString(output[i:])
 		out += string(runeValue)
-		w = width
+		i += size
 	}
 	out += text
 	return out

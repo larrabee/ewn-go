@@ -2,7 +2,6 @@ package ewn
 
 import (
 	"bytes"
-	_ "fmt"
 	"github.com/mattn/go-isatty"
 	"io"
 	"os"
