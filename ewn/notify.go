@@ -133,7 +133,7 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"comment":     msg.Args.Comment,
 					"retry":       "0/0",
 					"tag":         cfg.GetString("graylog.tag"),
-					"output":      stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 65535, "\n<Output truncated>"),
+					"output":      stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 32765, "\n<Output truncated>"),
 					"failed":      1,
 				}}
 			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
@@ -162,7 +162,7 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"comment":     msg.Args.Comment,
 					"retry":       fmt.Sprintf("%d/%d", retry.Retry, msg.Args.Retry),
 					"tag":         cfg.GetString("graylog.tag"),
-					"output":      stripOutput(retry.Output, 65535, "\n<Output truncated>"),
+					"output":      stripOutput(retry.Output, 32765, "\n<Output truncated>"),
 				}}
 
 			if isFailed(msg) {
