@@ -49,7 +49,7 @@ func (l *Lock) Acquire() error {
 	if l.lockFilePath == "" {
 		lockFileName := "ewn-" + hashOfString(l.Key) + ".lock"
 		l.lockFilePath = path.Join(os.TempDir(), lockFileName)
-	}u
+	}
 	if _, err1 := os.Stat(l.lockFilePath); !os.IsNotExist(err1) {
 		pid, err2 := readLockFile(l.lockFilePath)
 		if err2 != nil {

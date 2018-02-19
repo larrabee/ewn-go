@@ -1,0 +1,14 @@
+language: go
+go:
+  - 1.x
+gobuild_args: -v
+
+before_deploy: go build -o ./release/ewn
+
+deploy:
+  provider: releases
+  api_key: "${GITHUB_TOKEN}"
+  file: "./release/ewn"
+  skip_cleanup: true
+  on:
+    tags: true
