@@ -128,12 +128,18 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"tag":         cfg.GetString("graylog.tag"),
 				}}
 
-			if isFailed(msg) {
+			if isFailed(msg) || msg.GeneralError != nil {
 				gelfMessage.Extra["failed"] = 1
 			} else {
 				gelfMessage.Extra["failed"] = 0
 			}
-			gelfMessage.Extra["output"] = stripOutput(retry.Output, 20, "\n<Output truncated>")
+
+			if msg.GeneralError != nil {
+				gelfMessage.Extra["output"] = stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 65535, "\n<Output truncated>")
+			} else {
+				gelfMessage.Extra["output"] = stripOutput(retry.Output, 65535, "\n<Output truncated>")
+			}
+
 			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
 			if err != nil {
 				return err
@@ -152,11 +158,15 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 func stripOutput(output string, maxLen int, text string) string {
 	if utf8.RuneCountInString(output) <= maxLen {
 		return output
+	} else if maxLen == utf8.RuneCountInString(text) {
+		return text
+	}
+	if maxLen < utf8.RuneCountInString(text) {
+		text = stripOutput(text, maxLen, "")
 	}
 	var out string
 	outLen := maxLen - utf8.RuneCountInString(text)
-	for i, char := 0, 0; i < len(text) || char < outLen; char = char + 1 {
-		//var runeValue rune
+	for i, char := 0, 0; char < outLen; char++ {
 		runeValue, size := utf8.DecodeRuneInString(output[i:])
 		out += string(runeValue)
 		i += size
