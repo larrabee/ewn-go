@@ -56,7 +56,11 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 			msg.Args)
 
 		eMessage := gomail.NewMessage()
-		eMessage.SetHeader("From", cfg.GetString("email.from"))
+		if cfg.GetString("email.from") == "" {
+			eMessage.SetHeader("From", fmt.Sprintf("ewn@%s", msg.Host))
+		} else {
+			eMessage.SetHeader("From", cfg.GetString("email.from"))
+		}
 		eMessage.SetHeaders(recipients)
 		eMessage.SetHeader("Subject", fmt.Sprintf("ewn@%s FAILED: %s", msg.Host, msg.Args.Command))
 		if msg.GeneralError != nil {
