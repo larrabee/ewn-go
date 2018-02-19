@@ -11,12 +11,10 @@ This is wrapper script, what can notify you when your tasks failed.
 
 ## Install
 1. Download binary from [Release page](https://github.com/larrabee/ewn-go/releases) or build it with `go build main.go`
-2. Run `ewn --initconfig`. This command create default config file
+2. Run `ewn --initconfig`. This command create default config file (default config path: `/etc/ewn.conf`)
 3. Update config file with your parameters
-## Configure
-You must modify file `/etc/ewn.conf`
 
-## usage
+## Usage
 
 * Exec command with notify for default recipients ('user1@example.com' and 'user2@example.com'):  
 `ewn -c 'echo "This is test command" && /bin/false'`  
@@ -26,6 +24,9 @@ You must modify file `/etc/ewn.conf`
 `ewn -c 'echo "This is test command" && /bin/false' --comment "This command will always fail"`    
 * Exec command that prevent duplicate processes:  
 `ewn -c 'echo "This is test command" && /bin/sleep 3600' --dont-duplicate`  
+* Exec command that prevent duplicate processes with custom key (by default it is --command). It useful when you have different commands:  
+`ewn -c 'echo "This is first command" | tee /tmp/file && /bin/sleep 3600' --dont-duplicate --dont-duplicate-key "conflicting commands"` 
+`ewn -c 'echo "This is second command" | tee /tmp/file && /bin/sleep 3600' --dont-duplicate --dont-duplicate-key "conflicting command"`
 * Exec command with 3 retry on failure and 30 sec interval between retries:  
 `ewn -c 'echo "This is test command" && /bin/false' --retry 3 --retry-sleep 30`  
 * Exec command with custom valid exit codes (default is 0). If command exit with exit code 1, 3 or 255 email will not sent.  

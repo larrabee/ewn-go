@@ -24,6 +24,9 @@ func Notify(msg *Message, cfg *viper.Viper) {
 }
 
 func isFailed(msg *Message) bool {
+	if msg.GeneralError != nil {
+		return true
+	}
 	for _, val := range msg.ValidExitCode {
 		for _, val2 := range msg.Retries {
 			if val != val2.ExitCode {
@@ -111,6 +114,35 @@ func connStrToStruct(s string) (conn smtpConn, err error) {
 
 func sendGelf(msg *Message, cfg *viper.Viper) error {
 	if cfg.GetBool("graylog.enabled") {
+		if msg.GeneralError != nil {
+			gelfMessage := gelf.Message{Version: "1.1",
+				Host:     msg.Host,
+				Short:    msg.Args.Command,
+				TimeUnix: float64(time.Now().Unix()),
+				Level:    1,
+				Extra: map[string]interface{}{
+					"command":     msg.Args.Command,
+					"start_date":  time.Now().Unix(),
+					"finish_date": time.Now().Unix(),
+					"duration":    0,
+					"exitcode":    1,
+					"comment":     msg.Args.Comment,
+					"retry":       "0/0",
+					"tag":         cfg.GetString("graylog.tag"),
+					"output":      stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 65535, "\n<Output truncated>"),
+					"failed":      1,
+				}}
+			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
+			if err != nil {
+				return err
+			}
+			defer gelfWriter.Close()
+			err = gelfWriter.WriteMessage(&gelfMessage)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
 		for _, retry := range msg.Retries {
 			gelfMessage := gelf.Message{Version: "1.1",
 				Host:     msg.Host,
@@ -126,18 +158,13 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"comment":     msg.Args.Comment,
 					"retry":       fmt.Sprintf("%d/%d", retry.Retry, msg.Args.Retry),
 					"tag":         cfg.GetString("graylog.tag"),
+					"output":      stripOutput(retry.Output, 65535, "\n<Output truncated>"),
 				}}
 
-			if isFailed(msg) || msg.GeneralError != nil {
+			if isFailed(msg) {
 				gelfMessage.Extra["failed"] = 1
 			} else {
 				gelfMessage.Extra["failed"] = 0
-			}
-
-			if msg.GeneralError != nil {
-				gelfMessage.Extra["output"] = stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 65535, "\n<Output truncated>")
-			} else {
-				gelfMessage.Extra["output"] = stripOutput(retry.Output, 65535, "\n<Output truncated>")
 			}
 
 			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
