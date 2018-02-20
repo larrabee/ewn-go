@@ -7,9 +7,9 @@ import (
 // Args cli args structure
 type Args struct {
 	Command          string   `arg:"-c"`
-	Recipients       []string `arg:"-r,separate"`
+	Recipients       []string `arg:"-r"`
 	Comment          string   `help:"Comment for email Message"`
-	ValidExitCode    []int    `arg:"--valid-exitcodes, separate" help:"Valid exitcodes for executed command"`
+	ValidExitCode    []int    `arg:"--valid-exitcodes" help:"Valid exitcodes for executed command"`
 	Daemon           bool     `arg:"-d" help:"Daemonize process after start"`
 	DontDuplicate    bool     `arg:"--dont-duplicate" help:"Not run process when process with same key already run"`
 	DontDuplicateKey string   `arg:"--dont-duplicate-key" help:"Default: --command value"`
