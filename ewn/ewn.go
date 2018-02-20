@@ -22,11 +22,10 @@ type Retry struct {
 
 // Message is output message structure
 type Message struct {
-	Args          Args
-	Host          string
-	Retries       []Retry
-	GeneralError  error
-	ValidExitCode []int
+	Args         Args
+	Host         string
+	Retries      []Retry
+	GeneralError error
 }
 
 // Popen execute given command and return retry structure

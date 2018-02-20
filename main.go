@@ -11,7 +11,7 @@ import (
 func main() {
 	cli := ewn.GetCliArgs()
 	lock := ewn.Lock{Key: cli.DontDuplicateKey}
-	msg := ewn.Message{Args: cli, ValidExitCode: cli.ValidExitCode}
+	msg := ewn.Message{Args: cli}
 
 	if (cli.InitConfig == false) && (cli.Command == "") {
 		fmt.Fprintln(os.Stderr, "error: --command is required")

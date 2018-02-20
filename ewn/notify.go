@@ -27,14 +27,14 @@ func isFailed(msg *Message) bool {
 	if msg.GeneralError != nil {
 		return true
 	}
-	for _, val := range msg.ValidExitCode {
-		for _, val2 := range msg.Retries {
-			if val != val2.ExitCode {
-				return true
+	for _, ret := range msg.Retries {
+		for _, val := range msg.Args.ValidExitCode {
+			if val == ret.ExitCode {
+				return false
 			}
 		}
 	}
-	return false
+	return true
 }
 
 func sendEmail(msg *Message, cfg *viper.Viper) error {
