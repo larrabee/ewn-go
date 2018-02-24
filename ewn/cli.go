@@ -10,12 +10,12 @@ type Args struct {
 	Recipients       []string `arg:"-r"`
 	Comment          string   `help:"Comment for email Message"`
 	ValidExitCode    []int    `arg:"--valid-exitcodes" help:"Valid exitcodes for executed command"`
-	Daemon           bool     `arg:"-d" help:"Daemonize process after start"`
+	Daemon           bool     `arg:"-d" help:"Daemonize process after start. DONT implemented"`
 	DontDuplicate    bool     `arg:"--dont-duplicate" help:"Not run process when process with same key already run"`
 	DontDuplicateKey string   `arg:"--dont-duplicate-key" help:"Default: --command value"`
-	Retry            int      `help:"Retry run N times on fail. Default: 1 (no retries)"`
-	RetrySleep       int      `arg:"--retry-sleep" help:"Sleep between retries (seconds). Default: 0"`
-	Config           string   `help:"Path to config file. Default: /etc/ewn.conf"`
+	Retry            int      `help:"Retry run N times on fail."`
+	RetrySleep       int      `arg:"--retry-sleep" help:"Sleep between retries (seconds)"`
+	Config           string   `help:"Path to config file.`
 	InitConfig       bool     `help:"Write default config to --config path and exit"`
 }
 
