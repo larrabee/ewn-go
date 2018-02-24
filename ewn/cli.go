@@ -15,7 +15,7 @@ type Args struct {
 	DontDuplicateKey string   `arg:"--dont-duplicate-key" help:"Default: --command value"`
 	Retry            int      `help:"Retry run N times on fail."`
 	RetrySleep       int      `arg:"--retry-sleep" help:"Sleep between retries (seconds)"`
-	Config           string   `help:"Path to config file.`
+	Config           string   `help:"Path to config file."`
 	InitConfig       bool     `help:"Write default config to --config path and exit"`
 }
 
