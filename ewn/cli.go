@@ -14,6 +14,7 @@ type Args struct {
 	DontDuplicate    bool     `arg:"--dont-duplicate" help:"Not run process when process with same key already run"`
 	DontDuplicateKey string   `arg:"--dont-duplicate-key" help:"Default: --command value"`
 	Retry            int      `help:"Retry run N times on fail."`
+	Timeout          int      `arg:"-t" help:"Kill process after N seconds. Default: 0"`
 	RetrySleep       int      `arg:"--retry-sleep" help:"Sleep between retries (seconds)"`
 	Config           string   `help:"Path to config file."`
 	InitConfig       bool     `help:"Write default config to --config path and exit"`

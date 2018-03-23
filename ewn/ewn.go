@@ -29,8 +29,9 @@ type Message struct {
 }
 
 // Popen execute given command and return retry structure
-func Popen(command string) (result Retry, err error) {
+func Popen(command string, timeout time.Duration) (result Retry, err error) {
 	var outB bytes.Buffer
+	var timer *time.Timer
 	result.StartTime = time.Now().UTC()
 	cmd := exec.Command("/bin/bash", "-c", command)
 	if isatty.IsTerminal(os.Stdout.Fd()) {
@@ -42,7 +43,18 @@ func Popen(command string) (result Retry, err error) {
 	}
 
 	err2 := cmd.Start()
+	if timeout > time.Duration(0) {
+		timer = time.AfterFunc(timeout, func() {
+			cmd.Process.Kill()
+		})
+	}
+
+
 	_ = cmd.Wait()
+
+	if timeout > time.Duration(0) {
+		timer.Stop()
+	}
 
 	result.Output = outB.String()
 	result.EndTime = time.Now().UTC()

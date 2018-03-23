@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -55,7 +56,7 @@ func main() {
 
 RetryLoop:
 	for retryCounter := 1; retryCounter <= cli.Retry; retryCounter++ {
-		retry, err := ewn.Popen(cli.Command)
+		retry, err := ewn.Popen(cli.Command, time.Duration(cli.Timeout) * time.Second)
 		if err != nil {
 			msg.GeneralError = err
 			ewn.Notify(&msg, cfg)
