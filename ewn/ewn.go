@@ -42,15 +42,18 @@ func Popen(command string, timeout time.Duration) (result Retry, err error) {
 		cmd.Stderr = &outB
 	}
 
-	err2 := cmd.Start()
 	if timeout > time.Duration(0) {
 		timer = time.AfterFunc(timeout, func() {
 			cmd.Process.Kill()
 		})
 	}
 
+	err = cmd.Start()
+	if err != nil {
+		return
+	}
 
-	_ = cmd.Wait()
+	err = cmd.Wait()
 
 	if timeout > time.Duration(0) {
 		timer.Stop()
@@ -60,7 +63,7 @@ func Popen(command string, timeout time.Duration) (result Retry, err error) {
 	result.EndTime = time.Now().UTC()
 	result.Duration = result.EndTime.Sub(result.StartTime)
 
-	if err2 != nil {
+	if err != nil {
 		exitError := err.(*exec.ExitError)
 		ws := exitError.Sys().(syscall.WaitStatus)
 		result.ExitCode = ws.ExitStatus()
