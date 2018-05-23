@@ -4,6 +4,7 @@ builds:
   - 
     env:
       - CGO_ENABLED=0
+    binary: ewn
 archive:
   replacements:
     darwin: MacOS
