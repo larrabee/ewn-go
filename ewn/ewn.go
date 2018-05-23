@@ -9,11 +9,9 @@ import (
 	"syscall"
 	"time"
 	"github.com/kr/pty"
-	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
-// Retry contains command execution result
+//Retry contains command execution result
 type Retry struct {
 	ExitCode  int
 	Output    string
@@ -23,7 +21,7 @@ type Retry struct {
 	Retry     int
 }
 
-// Message is output message structure
+//Message is output message structure
 type Message struct {
 	Args         Args
 	Host         string
@@ -31,54 +29,47 @@ type Message struct {
 	GeneralError error
 }
 
-// Popen execute given command and return retry structure
+//Popen execute given command and return retry structure
 func Popen(command string, timeout time.Duration, tty bool) (result Retry, err error) {
 	var outB bytes.Buffer
 	var timer *time.Timer
 	result.StartTime = time.Now().UTC()
 	cmd := exec.Command("/bin/bash", "-c", command)
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
-		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
-	} else {
-		cmd.Stdout = &outB
-		cmd.Stderr = &outB
-	}
-
-	if tty {
-		ptmx, err := pty.Start(cmd)
-		if err != nil {
-			return result, err
-		}
-		defer ptmx.Close()
-
-		if err := pty.InheritSize(os.Stdin, ptmx); err != nil {
-			fmt.Printf("error resizing pty: %s", err)
-		}
-		
-		oldState, err := terminal.MakeRaw(int(os.Stdin.Fd()))
-		if err != nil {
-			return result, err
-		}
-		defer terminal.Restore(int(os.Stdin.Fd()), oldState)
-		go func() { io.Copy(cmd.Stdout, ptmx) }()
-		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
-		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
-	}
-
 	if timeout > time.Duration(0) {
 		timer = time.AfterFunc(timeout, func() {
 			cmd.Process.Kill()
 		})
 	}
+
+	if isatty.IsTerminal(os.Stdout.Fd()) && !tty {
+		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
+		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
+	} else if isatty.IsTerminal(os.Stdout.Fd()) && tty {
+		ptmx, err := pty.Start(cmd)
+		if err != nil {
+			return result, err
+		}
+		defer ptmx.Close()
+		go func() { io.Copy(io.MultiWriter(os.Stdout, &outB), ptmx) }()
+	} else if tty {
+		ptmx, err := pty.Start(cmd)
+		if err != nil {
+			return result, err
+		}
+		defer ptmx.Close()
+		go func() { io.Copy(&outB, ptmx) }()
+	}else {
+		cmd.Stdout = &outB
+		cmd.Stderr = &outB
+	}
+
 	if !tty {
 		err = cmd.Start()
 		if err != nil {
 			return
 		}
 	}
-
 
 	err = cmd.Wait()
 
