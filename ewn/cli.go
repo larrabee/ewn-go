@@ -16,6 +16,7 @@ type Args struct {
 	Retry            int      `help:"Retry run N times on fail."`
 	Timeout          int      `arg:"-t" help:"Kill process after N seconds. Default: 0"`
 	RetrySleep       int      `arg:"--retry-sleep" help:"Sleep between retries (seconds)"`
+	Tty              bool     `help:"Allocate pseudo-terminal for executed command"`
 	Config           string   `help:"Path to config file."`
 	InitConfig       bool     `help:"Write default config to --config path and exit"`
 }

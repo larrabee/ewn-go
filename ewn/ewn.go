@@ -8,6 +8,9 @@ import (
 	"os/exec"
 	"syscall"
 	"time"
+	"github.com/kr/pty"
+	"fmt"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Retry contains command execution result
@@ -29,11 +32,12 @@ type Message struct {
 }
 
 // Popen execute given command and return retry structure
-func Popen(command string, timeout time.Duration) (result Retry, err error) {
+func Popen(command string, timeout time.Duration, tty bool) (result Retry, err error) {
 	var outB bytes.Buffer
 	var timer *time.Timer
 	result.StartTime = time.Now().UTC()
 	cmd := exec.Command("/bin/bash", "-c", command)
+
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
 		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
@@ -42,16 +46,39 @@ func Popen(command string, timeout time.Duration) (result Retry, err error) {
 		cmd.Stderr = &outB
 	}
 
+	if tty {
+		ptmx, err := pty.Start(cmd)
+		if err != nil {
+			return result, err
+		}
+		defer ptmx.Close()
+
+		if err := pty.InheritSize(os.Stdin, ptmx); err != nil {
+			fmt.Printf("error resizing pty: %s", err)
+		}
+		
+		oldState, err := terminal.MakeRaw(int(os.Stdin.Fd()))
+		if err != nil {
+			return result, err
+		}
+		defer terminal.Restore(int(os.Stdin.Fd()), oldState)
+		go func() { io.Copy(cmd.Stdout, ptmx) }()
+		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
+		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
+	}
+
 	if timeout > time.Duration(0) {
 		timer = time.AfterFunc(timeout, func() {
 			cmd.Process.Kill()
 		})
 	}
-
-	err = cmd.Start()
-	if err != nil {
-		return
+	if !tty {
+		err = cmd.Start()
+		if err != nil {
+			return
+		}
 	}
+
 
 	err = cmd.Wait()
 
