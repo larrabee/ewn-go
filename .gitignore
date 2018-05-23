@@ -16,3 +16,8 @@
 main
 release/
 .idea/
+
+# Vendor dir
+vendor/
+dist/
+
