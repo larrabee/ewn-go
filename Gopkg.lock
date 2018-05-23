@@ -21,6 +21,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/go-gomail/gomail"
+  packages = ["."]
+  revision = "81ebce5c23dfd25c6c67194b37d3dd3f338c98b1"
+
+[[projects]]
+  branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [
     ".",
@@ -131,12 +137,6 @@
   revision = "2caba252f4dc53eaf6b553000885530023f54623"
 
 [[projects]]
-  name = "gopkg.in/gomail.v2"
-  packages = ["."]
-  revision = "41f3572897373c5538c50a2402db15db079fa4fd"
-  version = "2.0.0"
-
-[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -145,6 +145,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6092dedf5aa47e159a007c45f142696ddb2c643a00a30dca41ec0fd5a2973273"
+  inputs-digest = "de06a711ea24ab3f1e3a1836ca1f9926e57a67af02a85e8e6a0a9dc3b2de93ec"
   solver-name = "gps-cdcl"
   solver-version = 1

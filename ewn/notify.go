@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
-	"gopkg.in/gomail.v2"
+	"github.com/go-gomail/gomail"
 	"os"
 	"strconv"
 	"strings"

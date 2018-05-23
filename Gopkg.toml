@@ -45,10 +45,10 @@
   branch = "v2"
   name = "gopkg.in/Graylog2/go-gelf.v2"
 
-[[constraint]]
-  name = "gopkg.in/gomail.v2"
-  version = "2.0.0"
-
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/go-gomail/gomail"
+  branch = "master"
