@@ -119,6 +119,10 @@ func connStrToStruct(s string) (conn smtpConn, err error) {
 func sendGelf(msg *Message, cfg *viper.Viper) error {
 	if cfg.GetBool("graylog.enabled") {
 		if msg.GeneralError != nil {
+			out, err := stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 32765, "\n<Output truncated>")
+			if err != nil {
+				return err
+			}
 			gelfMessage := gelf.Message{Version: "1.1",
 				Host:     msg.Host,
 				Short:    msg.Args.Command,
@@ -133,7 +137,7 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"comment":     msg.Args.Comment,
 					"retry":       "0/0",
 					"tag":         cfg.GetString("graylog.tag"),
-					"output":      stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 32765, "\n<Output truncated>"),
+					"output":      out,
 					"failed":      1,
 				}}
 			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
@@ -148,6 +152,10 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 			return nil
 		}
 		for _, retry := range msg.Retries {
+			out, err := stripOutput(retry.Output, 32765, "\n<Output truncated>")
+			if err != nil {
+				return err
+			}
 			gelfMessage := gelf.Message{Version: "1.1",
 				Host:     msg.Host,
 				Short:    msg.Args.Command,
@@ -162,7 +170,7 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"comment":     msg.Args.Comment,
 					"retry":       fmt.Sprintf("%d/%d", retry.Retry, msg.Args.Retry),
 					"tag":         cfg.GetString("graylog.tag"),
-					"output":      stripOutput(retry.Output, 32765, "\n<Output truncated>"),
+					"output":      out,
 				}}
 
 			if isFailed(msg) {
@@ -186,22 +194,27 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 	return nil
 }
 
-func stripOutput(output string, maxLen int, text string) string {
-	if utf8.RuneCountInString(output) <= maxLen {
-		return output
-	} else if maxLen == utf8.RuneCountInString(text) {
-		return text
+func stripOutput(output string, maxLenBytes int, text string) (string, error) {
+	if len(output) <= maxLenBytes {
+		return output, nil
+	} else if maxLenBytes == len(text) {
+		return text, nil
+	} else if maxLenBytes < len(text) {
+		return "", fmt.Errorf("max string length less than text")
 	}
-	if maxLen < utf8.RuneCountInString(text) {
-		text = stripOutput(text, maxLen, "")
-	}
+
+	maxPayloadBytes := maxLenBytes - len(text)
 	var out string
-	outLen := maxLen - utf8.RuneCountInString(text)
-	for i, char := 0, 0; char < outLen; char++ {
+	i, char := 0, 0
+	for {
 		runeValue, size := utf8.DecodeRuneInString(output[i:])
+		if i + size > maxPayloadBytes {
+			break
+		}
 		out += string(runeValue)
 		i += size
+		char++
 	}
 	out += text
-	return out
+	return out, nil
 }
