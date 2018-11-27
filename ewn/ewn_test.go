@@ -12,21 +12,22 @@ func TestStripOutput(t *testing.T) {
 	testStrings := []testString{
 		{"HhjasidiewekncxcPosidsdmandhqwejnnbasdhj", "END", 15, "HhjasidiewekEND"},
 		{"HhjasidiewekncxcPosidsdmandhqwejnnbasdhj", "END", 40, "HhjasidiewekncxcPosidsdmandhqwejnnbasdhj"},
-		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 15, "ФввыыдйцуфывЦЦЦ"},
-		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 31, "ФввыыдйцуфывфЛыдззщщйцуььвфьься"},
-		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 3, "ЦЦЦ"},
-		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 0, ""},
-		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 1, "Ц"},
-		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 4, "ФЦЦЦ"},
+		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 30, "ФввыыдйцуфывЦЦЦ"},
+		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 62, "ФввыыдйцуфывфЛыдззщщйцуььвфьься"},
+		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 6, "ЦЦЦ"},
+		{"ФввыыдйцуфывфЛыдззщщйцуььвфьься", "ЦЦЦ", 8, "ФЦЦЦ"},
 	}
 	for _, test := range testStrings {
-		realOut := stripOutput(test.inString, test.maxLen, test.text)
+		realOut, _ := stripOutput(test.inString, test.maxLen, test.text)
 		if realOut != test.outString {
 			t.Error(
 				"For", test,
-				"expected", test.outString,
-				"got", realOut,
+				"expected:", test.outString,
+				"got:", realOut,
 			)
+		}
+		if len(realOut) > test.maxLen {
+			t.Error("For", test, "result length greater than limit")
 		}
 	}
 }
