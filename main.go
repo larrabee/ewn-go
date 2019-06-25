@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	ewn "github.com/larrabee/ewn-go/ewn"
+	"github.com/larrabee/ewn-go/ewn"
 	"os"
 	"os/signal"
 	"syscall"
@@ -56,7 +56,7 @@ func main() {
 
 RetryLoop:
 	for retryCounter := 1; retryCounter <= cli.Retry; retryCounter++ {
-		retry, err := ewn.Popen(cli.Command, time.Duration(cli.Timeout) * time.Second, cli.Tty)
+		retry, err := ewn.Popen(cli.Command, time.Duration(cli.Timeout)*time.Second, cli.Tty)
 		if err != nil {
 			msg.GeneralError = err
 			ewn.Notify(&msg, cfg)

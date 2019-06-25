@@ -2,20 +2,26 @@ package ewn
 
 import (
 	"github.com/spf13/viper"
+	"io/ioutil"
 	"os"
 )
 
 // GetConfig return config struct
 func GetConfig(configPath string) (*viper.Viper, error) {
-	var v = viper.New()
-	v.SetConfigType("json")
-	file, err1 := os.Open(configPath)
+	vp := viper.New()
+	vp.SetConfigType("json")
+
+	file, err := os.Open(configPath)
 	defer file.Close()
-	if err1 != nil {
-		return nil, err1
+	if err != nil {
+		return nil, err
 	}
-	err2 := v.ReadConfig(file)
-	return v, err2
+
+	err = vp.ReadConfig(file)
+	if err != nil {
+		return nil, err
+	}
+	return vp, nil
 }
 
 // InitConfig create default config file in given path
@@ -42,14 +48,9 @@ func InitConfig(configPath string) error {
   }
 }
 	`
-	f, err1 := os.Create(configPath)
-	if err1 != nil {
-		return err1
-	}
-	defer f.Close()
-	_, err2 := f.Write([]byte(config))
-	if err2 != nil {
-		return err2
+	err := ioutil.WriteFile(configPath, []byte(config), 0644)
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -2,13 +2,13 @@ package ewn
 
 import (
 	"bytes"
+	"github.com/kr/pty"
 	"github.com/mattn/go-isatty"
 	"io"
 	"os"
 	"os/exec"
 	"syscall"
 	"time"
-	"github.com/kr/pty"
 )
 
 //Retry contains command execution result
@@ -59,7 +59,7 @@ func Popen(command string, timeout time.Duration, tty bool) (result Retry, err e
 		}
 		defer ptmx.Close()
 		go func() { io.Copy(&outB, ptmx) }()
-	}else {
+	} else {
 		cmd.Stdout = &outB
 		cmd.Stderr = &outB
 	}

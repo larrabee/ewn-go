@@ -2,9 +2,9 @@ package ewn
 
 import (
 	"fmt"
+	"github.com/go-gomail/gomail"
 	"github.com/spf13/viper"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
-	"github.com/go-gomail/gomail"
 	"os"
 	"strconv"
 	"strings"
@@ -12,7 +12,7 @@ import (
 	"unicode/utf8"
 )
 
-// Notify send notifications over all chanels
+// Notify send notifications over all channels
 func Notify(msg *Message, cfg *viper.Viper) {
 	if err := sendEmail(msg, cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "Email sending failed with error: %s\n", err)
@@ -83,11 +83,8 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 			}
 		}
 		eMessage.SetBody("text/plain", messageFull)
-		if cfg.GetBool("email.secure") {
-			sender = gomail.NewDialer(conn.host, conn.port, cfg.GetString("email.user"), cfg.GetString("email.pass"))
-		} else {
-			sender = gomail.NewPlainDialer(conn.host, conn.port, cfg.GetString("email.user"), cfg.GetString("email.pass"))
-		}
+		sender = gomail.NewDialer(conn.host, conn.port, cfg.GetString("email.user"), cfg.GetString("email.pass"))
+		sender.SSL = cfg.GetBool("email.secure")
 		err := sender.DialAndSend(eMessage)
 		if err != nil {
 			return err
@@ -118,6 +115,12 @@ func connStrToStruct(s string) (conn smtpConn, err error) {
 
 func sendGelf(msg *Message, cfg *viper.Viper) error {
 	if cfg.GetBool("graylog.enabled") {
+		gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
+		if err != nil {
+			return err
+		}
+		defer gelfWriter.Close()
+
 		if msg.GeneralError != nil {
 			out, err := stripOutput(fmt.Sprintf("General Error: %s", msg.GeneralError), 32765, "\n<Output truncated>")
 			if err != nil {
@@ -140,17 +143,13 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"output":      out,
 					"failed":      1,
 				}}
-			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
-			if err != nil {
-				return err
-			}
-			defer gelfWriter.Close()
 			err = gelfWriter.WriteMessage(&gelfMessage)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
+
 		for _, retry := range msg.Retries {
 			out, err := stripOutput(retry.Output, 32765, "\n<Output truncated>")
 			if err != nil {
@@ -179,11 +178,6 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 				gelfMessage.Extra["failed"] = 0
 			}
 
-			gelfWriter, err := gelf.NewUDPWriter(fmt.Sprintf("%s:%d", cfg.GetString("graylog.host"), cfg.GetInt("graylog.port")))
-			if err != nil {
-				return err
-			}
-			defer gelfWriter.Close()
 			err = gelfWriter.WriteMessage(&gelfMessage)
 			if err != nil {
 				return err
@@ -208,7 +202,7 @@ func stripOutput(output string, maxLenBytes int, text string) (string, error) {
 	i, char := 0, 0
 	for {
 		runeValue, size := utf8.DecodeRuneInString(output[i:])
-		if i + size > maxPayloadBytes {
+		if i+size > maxPayloadBytes {
 			break
 		}
 		out += string(runeValue)

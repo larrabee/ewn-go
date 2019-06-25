@@ -19,29 +19,38 @@ type Lock struct {
 
 // ErrLockAquireFailed : error, that returned then lock acquire failed with error
 type ErrLockAquireFailed struct {
-	message string
+	err  error
+	path string
+}
+
+func (e *ErrLockAquireFailed) Error() string {
+	return fmt.Sprintf("can not acquire lock, file path: %s; err: %s", e.path, e.err)
+}
+
+// ErrLockAquireFailed : error, that returned then lock acquire failed with error
+type ErrLockReleaseFailed struct {
+	err  error
+	path string
+}
+
+func (e *ErrLockReleaseFailed) Error() string {
+	return fmt.Sprintf("failed to release lock, file path: %s; err: %s", e.path, e.err)
 }
 
 // ErrLockAlreadyAquired : error, that returned then lock already acquired by another process
 type ErrLockAlreadyAquired struct {
-	message string
-}
-
-// ErrLockNotOwned : error, that returned then you trying release not owned lock
-type ErrLockNotOwned struct {
-	message string
-}
-
-func (e *ErrLockAquireFailed) Error() string {
-	return e.message
+	pid int64
 }
 
 func (e *ErrLockAlreadyAquired) Error() string {
-	return e.message
+	return fmt.Sprintf("lock already acquired by process with pid: %d", e.pid)
 }
 
+// ErrLockNotOwned : error, that returned then you trying release not owned lock
+type ErrLockNotOwned struct{}
+
 func (e *ErrLockNotOwned) Error() string {
-	return e.message
+	return "Can not release not owned lock. You must acquire it first."
 }
 
 // Acquire trying to acquire lock. Return error on error or nil on success
@@ -50,24 +59,18 @@ func (l *Lock) Acquire() error {
 		lockFileName := "ewn-" + hashOfString(l.Key) + ".lock"
 		l.lockFilePath = path.Join(os.TempDir(), lockFileName)
 	}
-	if _, err1 := os.Stat(l.lockFilePath); !os.IsNotExist(err1) {
-		pid, err2 := readLockFile(l.lockFilePath)
-		if err2 != nil {
-			return err2
+	if _, err := os.Stat(l.lockFilePath); !os.IsNotExist(err) {
+		pid, err := readLockFile(l.lockFilePath)
+		if err != nil {
+			return err
 		}
 		if isPidExist(pid) {
-			return &ErrLockAlreadyAquired{fmt.Sprintf("Lock already acquired by process with pid: %d", pid)}
+			return &ErrLockAlreadyAquired{pid}
 		}
-		err3 := writeLockFile(l.lockFilePath)
-		if err3 != nil {
-			return &ErrLockAquireFailed{fmt.Sprintf("Can not write lock file: %s with error: %s", l.lockFilePath, err3)}
-		}
-		l.lockAcquired = true
-		return nil
 	}
-	err1 := writeLockFile(l.lockFilePath)
-	if err1 != nil {
-		return &ErrLockAquireFailed{fmt.Sprintf("Can not write lock file: %s with error: %s", l.lockFilePath, err1)}
+	err := writeLockFile(l.lockFilePath)
+	if err != nil {
+		return &ErrLockAquireFailed{path: l.lockFilePath, err: err}
 	}
 	l.lockAcquired = true
 	return nil
@@ -76,9 +79,12 @@ func (l *Lock) Acquire() error {
 // Release lock. Return error on error or nil on success
 func (l *Lock) Release() error {
 	if !l.lockAcquired {
-		return &ErrLockNotOwned{"Can not release not owned lock. You must acquire it first."}
+		return &ErrLockNotOwned{}
 	}
-	_ = os.Remove(l.lockFilePath)
+	err := os.Remove(l.lockFilePath)
+	if err != nil {
+		return &ErrLockReleaseFailed{path: l.lockFilePath, err: err}
+	}
 	l.lockAcquired = false
 	return nil
 }
@@ -91,11 +97,11 @@ func hashOfString(str string) (hash string) {
 }
 
 func isPidExist(pid int64) bool {
-	file, err1 := os.Stat(fmt.Sprintf("/proc/%d", pid))
-	if os.IsNotExist(err1) {
+	file, err := os.Stat(fmt.Sprintf("/proc/%d", pid))
+	if os.IsNotExist(err) {
 		return false
 	}
-	if err1 != nil {
+	if err != nil {
 		return false
 	}
 	if !file.IsDir() {
@@ -104,15 +110,12 @@ func isPidExist(pid int64) bool {
 	return true
 }
 
-func readLockFile(path string) (pid int64, err error) {
-	fileByte, err1 := ioutil.ReadFile(path)
-	if err1 != nil {
-		return 0, &ErrLockAquireFailed{fmt.Sprintf("Can not read lock file: %s with error: %s", path, err1)}
+func readLockFile(path string) (int64, error) {
+	fileByte, err := ioutil.ReadFile(path)
+	if err != nil {
+		return 0, &ErrLockAquireFailed{path: path, err: err}
 	}
-	pid, err2 := strconv.ParseInt(string(fileByte), 10, 32)
-	if err2 != nil {
-		return 0, &ErrLockAquireFailed{fmt.Sprintf("Can not parse lock file: %s with error: %s", path, err2)}
-	}
+	pid, _ := strconv.ParseInt(string(fileByte), 10, 32)
 	return pid, nil
 }
 
