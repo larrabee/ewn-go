@@ -33,7 +33,7 @@ This is wrapper script, what can notify you when your tasks failed.
 `ewn -c 'echo "This is test command" && /bin/false' --valid-exitcodes 1 3 255`  
 
 You can combine any keys like:  
-`ewn -c 'echo "This is test command" && /bin/false' -d --dont-duplicate -r "user3@example.com" "user4@example.com" --retry 3 --retry-sleep 30 --valid-exitcodes 1  --comment "This command will never fail because 1 in valid exitcodes"`  
+`ewn -c 'echo "This is test command" && /bin/false' --dont-duplicate -r "user3@example.com" "user4@example.com" --retry 3 --retry-sleep 30 --valid-exitcodes 1  --comment "This command will never fail because 1 in valid exitcodes"`  
 
 ## License
 GPL v3

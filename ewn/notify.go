@@ -41,19 +41,20 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 	if cfg.GetBool("email.enabled") && isFailed(msg) {
 		recipients := map[string][]string{"To": cfg.GetStringSlice("email.recipients")}
 		var messageFull string
-		var sender *gomail.Dialer
-		conn, err2 := connStrToStruct(cfg.GetString("email.host"))
-		if err2 != nil {
-			return err2
+		conn, err := connStrToStruct(cfg.GetString("email.host"))
+		if err != nil {
+			return err
 		}
-		messageHeader := fmt.Sprintf("Command: %s\n"+
+		messageHeader := fmt.Sprintf(
+			"Command: %s\n"+
 			"Host: %s\n"+
 			"Comment: %s\n"+
 			"Args: %+v\n\n",
 			msg.Args.Command,
 			msg.Host,
 			msg.Args.Comment,
-			msg.Args)
+			msg.Args,
+			)
 
 		eMessage := gomail.NewMessage()
 		if cfg.GetString("email.from") == "" {
@@ -77,16 +78,15 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 					v.Retry,
 					v.StartTime,
 					v.EndTime,
-					v.Duration,
+					v.EndTime.Sub(v.StartTime),
 					v.ExitCode,
 					v.Output)
 			}
 		}
 		eMessage.SetBody("text/plain", messageFull)
-		sender = gomail.NewDialer(conn.host, conn.port, cfg.GetString("email.user"), cfg.GetString("email.pass"))
+		sender := gomail.NewDialer(conn.host, conn.port, cfg.GetString("email.user"), cfg.GetString("email.pass"))
 		sender.SSL = cfg.GetBool("email.secure")
-		err := sender.DialAndSend(eMessage)
-		if err != nil {
+		if err := sender.DialAndSend(eMessage); err != nil {
 			return err
 		}
 	}
@@ -164,7 +164,7 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 					"command":     msg.Args.Command,
 					"start_date":  retry.StartTime.Unix(),
 					"finish_date": retry.EndTime.Unix(),
-					"duration":    retry.Duration / time.Second,
+					"duration":    retry.EndTime.Sub(retry.StartTime) / time.Second,
 					"exitcode":    retry.ExitCode,
 					"comment":     msg.Args.Comment,
 					"retry":       fmt.Sprintf("%d/%d", retry.Retry, msg.Args.Retry),
@@ -188,17 +188,17 @@ func sendGelf(msg *Message, cfg *viper.Viper) error {
 	return nil
 }
 
-func stripOutput(output string, maxLenBytes int, text string) (string, error) {
-	if len(output) <= maxLenBytes {
+func stripOutput(output string, cap int, text string) (string, error) {
+	if len(output) <= cap {
 		return output, nil
-	} else if maxLenBytes == len(text) {
+	} else if cap == len(text) {
 		return text, nil
-	} else if maxLenBytes < len(text) {
+	} else if cap < len(text) {
 		return "", fmt.Errorf("max string length less than text")
 	}
 
-	maxPayloadBytes := maxLenBytes - len(text)
-	var out string
+	maxPayloadBytes := cap - len(text)
+	out := ""
 	i, char := 0, 0
 	for {
 		runeValue, size := utf8.DecodeRuneInString(output[i:])
