@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"context"
 	"git.wsmgroup.ru/go-modules/utils"
-	"github.com/kr/pty"
 	"github.com/mattn/go-isatty"
 	"io"
 	"os"
-	"os/exec"
-	"syscall"
 	"time"
 )
 
@@ -51,7 +48,6 @@ func Popen(command string, timeout time.Duration) (Retry, error) {
 		cmd.Stderr = outBuffer
 	}
 
-
 	result.StartTime = time.Now().UTC()
 	err := cmd.Exec()
 	result.EndTime = time.Now().UTC()
@@ -60,69 +56,5 @@ func Popen(command string, timeout time.Duration) (Retry, error) {
 	}
 
 	result.Output = outBuffer.String()
-	//result.Duration = result.EndTime.Sub(result.StartTime)
-	return result, nil
-}
-
-//Popen execute given command and return retry structure
-func PopenOld(command string, timeout time.Duration, tty bool) (result Retry, err error) {
-	var outB bytes.Buffer
-	var timer *time.Timer
-	result.StartTime = time.Now().UTC()
-	cmd := exec.Command("/bin/bash", "-c", command)
-
-	if timeout > time.Duration(0) {
-		timer = time.AfterFunc(timeout, func() {
-			cmd.Process.Kill()
-		})
-	}
-
-	if isatty.IsTerminal(os.Stdout.Fd()) && !tty {
-		cmd.Stdout = io.MultiWriter(os.Stdout, &outB)
-		cmd.Stderr = io.MultiWriter(os.Stdout, &outB)
-	} else if isatty.IsTerminal(os.Stdout.Fd()) && tty {
-		ptmx, err := pty.Start(cmd)
-		if err != nil {
-			return result, err
-		}
-		defer ptmx.Close()
-		go func() { io.Copy(io.MultiWriter(os.Stdout, &outB), ptmx) }()
-	} else if tty {
-		ptmx, err := pty.Start(cmd)
-		if err != nil {
-			return result, err
-		}
-		defer ptmx.Close()
-		go func() { io.Copy(&outB, ptmx) }()
-	} else {
-		cmd.Stdout = &outB
-		cmd.Stderr = &outB
-	}
-
-	if !tty {
-		err = cmd.Start()
-		if err != nil {
-			return
-		}
-	}
-
-	err = cmd.Wait()
-
-	if timeout > time.Duration(0) {
-		timer.Stop()
-	}
-
-	result.Output = outB.String()
-	result.EndTime = time.Now().UTC()
-	//result.Duration = result.EndTime.Sub(result.StartTime)
-
-	if err != nil {
-		exitError := err.(*exec.ExitError)
-		ws := exitError.Sys().(syscall.WaitStatus)
-		result.ExitCode = ws.ExitStatus()
-	} else {
-		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		result.ExitCode = ws.ExitStatus()
-	}
 	return result, nil
 }

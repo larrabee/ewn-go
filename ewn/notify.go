@@ -47,14 +47,14 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 		}
 		messageHeader := fmt.Sprintf(
 			"Command: %s\n"+
-			"Host: %s\n"+
-			"Comment: %s\n"+
-			"Args: %+v\n\n",
+				"Host: %s\n"+
+				"Comment: %s\n"+
+				"Args: %+v\n\n",
 			msg.Args.Command,
 			msg.Host,
 			msg.Args.Comment,
 			msg.Args,
-			)
+		)
 
 		eMessage := gomail.NewMessage()
 		if cfg.GetString("email.from") == "" {
