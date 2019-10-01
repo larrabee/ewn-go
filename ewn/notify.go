@@ -68,6 +68,10 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 		} else {
 			messageFull = messageHeader
 			for _, v := range msg.Retries {
+				text, err := stripOutput(v.Output, 1*1024*1024, "<Output truncated>")
+				if err != nil {
+					return err
+				}
 				messageFull += fmt.Sprintf("Retry number: %d\n"+
 					"Start time: %s\n"+
 					"End time: %s\n"+
@@ -79,7 +83,8 @@ func sendEmail(msg *Message, cfg *viper.Viper) error {
 					v.EndTime,
 					v.Duration,
 					v.ExitCode,
-					v.Output)
+					text,
+				)
 			}
 		}
 		eMessage.SetBody("text/plain", messageFull)
