@@ -2,8 +2,6 @@ package ewn
 
 import (
 	"bytes"
-	"context"
-	"git.wsmgroup.ru/go-modules/utils"
 	"github.com/kr/pty"
 	"github.com/mattn/go-isatty"
 	"io"
@@ -19,6 +17,7 @@ type Retry struct {
 	Output    string
 	StartTime time.Time
 	EndTime   time.Time
+	Duration  time.Duration
 	Retry     int
 }
 
@@ -31,41 +30,7 @@ type Message struct {
 }
 
 //Popen execute given command and return retry structure
-func Popen(command string, timeout time.Duration) (Retry, error) {
-	ctx := context.Background()
-	outBuffer := &bytes.Buffer{}
-	result := Retry{}
-	if timeout > 0 {
-		ctx, _ = context.WithTimeout(ctx, timeout)
-	}
-
-	cmd := utils.NewExec()
-	cmd.WithContext(ctx)
-	cmd.Args = append(cmd.Args, []string{"/bin/bash", "-c", command}...)
-
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		cmd.Stdout = io.MultiWriter(os.Stdout, outBuffer)
-		cmd.Stderr = io.MultiWriter(os.Stdout, outBuffer)
-	} else {
-		cmd.Stdout = outBuffer
-		cmd.Stderr = outBuffer
-	}
-
-
-	result.StartTime = time.Now().UTC()
-	err := cmd.Exec()
-	result.EndTime = time.Now().UTC()
-	if err != nil {
-		return result, err
-	}
-
-	result.Output = outBuffer.String()
-	//result.Duration = result.EndTime.Sub(result.StartTime)
-	return result, nil
-}
-
-//Popen execute given command and return retry structure
-func PopenOld(command string, timeout time.Duration, tty bool) (result Retry, err error) {
+func Popen(command string, timeout time.Duration, tty bool) (result Retry, err error) {
 	var outB bytes.Buffer
 	var timer *time.Timer
 	result.StartTime = time.Now().UTC()
@@ -114,7 +79,7 @@ func PopenOld(command string, timeout time.Duration, tty bool) (result Retry, er
 
 	result.Output = outB.String()
 	result.EndTime = time.Now().UTC()
-	//result.Duration = result.EndTime.Sub(result.StartTime)
+	result.Duration = result.EndTime.Sub(result.StartTime)
 
 	if err != nil {
 		exitError := err.(*exec.ExitError)
