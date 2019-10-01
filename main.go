@@ -12,7 +12,7 @@ func main() {
 	cli := ewn.GetCliArgs()
 	lock := ewn.Lock{Key: cli.DontDuplicateKey}
 	msg := ewn.Message{
-		Args:    cli,
+		Args: cli,
 		Retries: make([]ewn.Retry, 0, cli.Retry),
 	}
 
@@ -41,7 +41,7 @@ func main() {
 
 RetryLoop:
 	for i := 1; i <= cli.Retry; i++ {
-		retry := ewn.Retry{Retry: i}
+		retry := ewn.Retry{Retry:i}
 		retry, err := ewn.Popen(cli.Command, time.Duration(cli.Timeout)*time.Second)
 		if err != nil {
 			msg.GeneralError = err
